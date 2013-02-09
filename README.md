@@ -21,3 +21,5 @@ Tips
 1. Use multiple directories for multiple tests.
 2. You don't have to use ssh and port forwardings. We have to use it because of
    reasons and stuff :-(.
+3. Use [.mailmap](http://www.kernel.org/pub/software/scm/git/docs/git-shortlog.html)
+   if users have inconsistant email addresses.

@@ -15,4 +15,9 @@ Usage
 2. Edit settings.json
 3. Run it again
 
-Tip: Use multiple directories for multiple tests
+Tips
+----
+
+1. Use multiple directories for multiple tests
+2. You don't have to use ssh and port forwardings. We have to use it because of
+   reasons and stuff :-(.

@@ -40,7 +40,7 @@ from email.utils import formatdate
 from email.mime.text import MIMEText
 
 # Typical initial clone:
-# ssh -R43325:git.adfinis.com:22 user@host.dom git clone \
+# ssh -R43325:git.host.com:22 user@host.dom git clone \
 # ssh://git@localhost:43325/project-dir
 
 # create the ~/.ssh/cm directory
@@ -101,7 +101,7 @@ settings = {
         "ssh",
         "-o",
         "ControlPath=~/.ssh/cm/%%r@%%h:%%p.conn",
-        "-R43325:git.adfinis.com:22",
+        "-R43325:git.host.com:22",
         "user@host.dom",
         "bash",
         "-c",

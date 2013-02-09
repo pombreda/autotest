@@ -190,7 +190,7 @@ def notify_failure(last_success, current_revision, stdout, stderr):
     name = settings['name']
     branch = settings['branch']
     emails_string = "\n".join(emails)
-    msg = u"""Hello there
+    msg = """Hello there
 
 You helped b0rking: %(name)s. Following people also commited on %(branch)s:
 

@@ -123,8 +123,8 @@ settings_file = "settings.json"
 
 def main():
     """Executes the defined commands and sends a notification on failure."""
+    init_settings()
     try:
-        init_settings()
         branch = settings["branch"]
         execute_and_print("connect_command", communicate=False)
         execute_and_print("switch_command", env={'branch' : branch})

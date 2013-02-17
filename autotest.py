@@ -105,7 +105,7 @@ settings = {
         "user@host.dom",
         "bash",
         "-c",
-        "'cd project-dir; git fetch; git merge origin/%(branch)s'"
+        "'cd project-dir; git fetch; git reset --hard origin/%(branch)s'"
     ],
     "revision_command": [
         "ssh",

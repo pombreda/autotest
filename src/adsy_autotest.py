@@ -73,18 +73,28 @@ settings = {
 settings_file = None
 
 
-def main():
-    global settings_file
-    try:
-        parser = argparse.ArgumentParser(
-            description=("""
-Autotest tool - Minialistic Continuous Integration
+class helpAction(argparse.Action):
 
+    def __call__(self, parser, args, values, option_string=None):
+        parser.print_help()
+        print("""
 Typical setup:
 # autotest init --settings path/to/settings.json
 # vi path/to/settings.json
 # autotest test --settings path/to/settings.json
-"""),
+        """)
+        parser.exit()
+
+
+def main():
+    global settings_file
+    try:
+        parser = argparse.ArgumentParser(
+            description="""
+    Autotest tool - Minialistic Continuous Integration
+
+    """,
+            add_help=False
         )
         parser.add_argument(
             "command",
@@ -92,41 +102,36 @@ Typical setup:
             choices=['init', 'test']
         )
         parser.add_argument(
-            "--s",
+            "-s",
             "--settings",
             nargs="?",
             help="Path to settings (json)",
         )
         parser.add_argument(
-            "-t",
-            "--test",
-            help="Enable test mode (raise exceptions)",
-            action="store_true"
+            "-h",
+            "--help",
+            nargs=0,
+            help="print this message and exit",
+            action=helpAction
         )
         args = parser.parse_args()
         command = args.command
         settings_file = args.settings
 
+        if command == "init":
+            write_settings()
+        elif command == "test":
+            execute()
     except Exception:
-        parser.print_help()
-        sys.exit(1)
-        if args.test:
-            raise
-    if command == "init":
-        write_settings()
-    elif command == "test":
-        execute()
-    else:
-        parser.print_help()
-        sys.exit(1)
+        traceback.print_exc()
 
 
 def execute():
     """Executes the defined commands and sends a notification on failure."""
-    read_settings()
     try:
+        read_settings()
+        os.chdir(settings['project_path'])
         branch = settings["branch"]
-        execute_and_print("connect_command", communicate=False)
         execute_and_print("switch_command", env={'branch' : branch})
         execute_and_print("pull_command", env={'branch' : branch})
         (
@@ -156,7 +161,6 @@ def execute():
                 notify_failure(last_success, current_revision, stdout, stderr)
     except Exception:
         traceback.print_exc()
-    execute_and_print("disconnect_command")
     write_settings()
 
 

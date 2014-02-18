@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 # vim: autoindent expandtab tabstop=4 sw=4 sts=4 filetype=python
 
-"""Automatic unit tests"""
+"""Autotest tool - Minimalistic Continuous Integration for git"""
 
 # Copyright (c) 2012, Adfinis SyGroup AG
 # All rights reserved.
@@ -35,7 +35,6 @@ import subprocess
 import sys
 import re
 import smtplib
-import traceback
 import argparse
 from email.utils import formatdate
 from email.mime.text import MIMEText
@@ -56,21 +55,22 @@ settings = {
     "switch_command"  : [
         "bash",
         "-c",
-        "'git clean -dxf; git checkout .; git checkout %(branch)s'"
+        "git clean -dxf; git checkout .; git checkout %(branch)s"
     ],
     "pull_command"    : [
         "bash",
         "-c",
-        "'git fetch; git reset --hard origin/%(branch)s'"
+        "git fetch; git reset --hard origin/%(branch)s"
     ],
     "revision_command": [
         "bash",
         "-c",
-        "git rev-parse HEAD'"
+        "git rev-parse HEAD"
     ]
 }
 
 settings_file = None
+quiet         = False
 
 
 class helpAction(argparse.Action):
@@ -79,89 +79,92 @@ class helpAction(argparse.Action):
         parser.print_help()
         print("""
 Typical setup:
-# autotest init --settings path/to/settings.json
+# autotest -s path/to/settings.json init
 # vi path/to/settings.json
-# autotest test --settings path/to/settings.json
+# autotest -spath/to/settings.json test
         """)
         parser.exit()
 
 
 def main():
     global settings_file
-    try:
-        parser = argparse.ArgumentParser(
-            description="""
-    Autotest tool - Minialistic Continuous Integration
+    global quiet
+    parser = argparse.ArgumentParser(
+        description="""
+Autotest tool - Minimalistic Continuous Integration for git:
+only informing authors of changes that have failed.
+""",
+        add_help=False
+    )
+    parser.add_argument(
+        "command",
+        help="command to execute",
+        choices=['init', 'test']
+    )
+    parser.add_argument(
+        "-s",
+        "--settings",
+        nargs="?",
+        help="Path to settings (json)",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        help="Do not output commands",
+        action="store_true"
+    )
+    parser.add_argument(
+        "-h",
+        "--help",
+        nargs=0,
+        help="print this message and exit",
+        action=helpAction
+    )
+    args = parser.parse_args()
+    settings_file = args.settings
+    quiet         = args.quiet
 
-    """,
-            add_help=False
-        )
-        parser.add_argument(
-            "command",
-            help="command to execute",
-            choices=['init', 'test']
-        )
-        parser.add_argument(
-            "-s",
-            "--settings",
-            nargs="?",
-            help="Path to settings (json)",
-        )
-        parser.add_argument(
-            "-h",
-            "--help",
-            nargs=0,
-            help="print this message and exit",
-            action=helpAction
-        )
-        args = parser.parse_args()
-        command = args.command
-        settings_file = args.settings
-
-        if command == "init":
-            write_settings()
-        elif command == "test":
-            execute()
-    except Exception:
-        traceback.print_exc()
+    if args.command == "init":
+        write_settings()
+    elif args.command == "test":
+        execute()
 
 
 def execute():
     """Executes the defined commands and sends a notification on failure."""
-    try:
-        read_settings()
-        os.chdir(settings['project_path'])
-        branch = settings["branch"]
-        execute_and_print("switch_command", env={'branch' : branch})
-        execute_and_print("pull_command", env={'branch' : branch})
+    read_settings()
+    os.chdir(settings['project_path'])
+    branch = settings["branch"]
+    execute_and_print("switch_command", env={'branch' : branch})
+    execute_and_print("pull_command", env={'branch' : branch})
+    (
+        ret,
+        stdout,
+        stderr
+    ) = execute_external(settings["revision_command"])
+    if not quiet:
+        print(stdout)
+        print(stderr)
+    current_revision = stdout.strip()
+    if settings['last_success'] is None:
+        last_success = "%s^" % current_revision
+    else:
+        last_success = settings['last_success']
+    if settings['last_test'] != current_revision:
+        settings['last_test'] = current_revision
         (
             ret,
             stdout,
             stderr
-        ) = execute_external(settings["revision_command"])
-        print(stdout)
-        print(stderr)
-        current_revision = stdout.strip()
-        if settings['last_success'] is None:
-            last_success = "%s^" % current_revision
-        else:
-            last_success = settings['last_success']
-        if settings['last_test'] != current_revision:
-            settings['last_test'] = current_revision
-            (
-                ret,
-                stdout,
-                stderr
-            ) = execute_external(settings['test_command'])
+        ) = execute_external(settings['test_command'])
+        if not quiet:
             print(stdout)
             print(stderr)
-            if ret == 0:
-                settings['last_success'] = current_revision
-            else:
-                notify_failure(last_success, current_revision, stdout, stderr)
-    except Exception:
-        traceback.print_exc()
-    write_settings()
+        if ret == 0:
+            settings['last_success'] = current_revision
+        else:
+            notify_failure(last_success, current_revision, stdout, stderr)
+        write_settings()
 
 
 def notify_failure(last_success, current_revision, stdout, stderr):
@@ -181,8 +184,9 @@ def notify_failure(last_success, current_revision, stdout, stderr):
             locals()
         )
     )
-    print(astdout)
-    print(astderr)
+    if not quiet:
+        print(astdout)
+        print(astderr)
 
     email_regex = re.compile("<(\S+@\S+\.\S+)>")
     emails = []
@@ -190,7 +194,8 @@ def notify_failure(last_success, current_revision, stdout, stderr):
         m = email_regex.search(line)
         if m:
             emails += [m.groups()[0]]
-    print(emails)
+    if not quiet:
+        print(emails)
     name = settings['name']
     branch = settings['branch']
     emails_string = "\n".join(emails)
@@ -229,7 +234,8 @@ Best,
     s = smtplib.SMTP(host)
 
     for email in emails:
-        print("Sending email to: %s" % email)
+        if not quiet:
+            print("Sending email to: %s" % email)
         coded = MIMEText(msg.encode('utf-8'), _charset='utf-8')
         coded['Subject'] = "Autotest %s" % name
         coded['From'] = sender
@@ -260,8 +266,9 @@ def execute_and_print(cmd, env={}, communicate=True):
         stderr
     ) = execute_external(newcmd, communicate=communicate)
     if communicate:
-        print(stdout)
-        print(stderr)
+        if not quiet:
+            print(stdout)
+            print(stderr)
 
 
 def read_settings():
@@ -278,15 +285,19 @@ def read_settings():
 
 def write_settings():
     """Write settings"""
-    f = open(settings_file, "w")
-    json.dump(
-        settings,
-        f,
-        sort_keys=True,
-        indent=4,
-        separators=(',', ': ')
-    )
-    f.close()
+    if os.path.isfile(settings_file):
+        f = open(settings_file, "w")
+        json.dump(
+            settings,
+            f,
+            sort_keys=True,
+            indent=4,
+            separators=(',', ': ')
+        )
+        f.close()
+    else:
+        print("Settings not found.")
+        sys.exit(1)
 
 
 def execute_external(command, stdin='', communicate=True):
@@ -299,7 +310,8 @@ def execute_external(command, stdin='', communicate=True):
 
     # run process
     returncode = 0
-    print(command, communicate)
+    if not quiet:
+        print(command, communicate)
     proc = subprocess.Popen(
         command,
         stdout=subprocess.PIPE,

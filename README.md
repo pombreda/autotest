@@ -18,6 +18,6 @@ Usage
 Tips
 ----
 
-1. Use multiple settings for multiple tests.
+1. Use multiple settings files for multiple tests/branches.
 2. Use [.mailmap](http://www.kernel.org/pub/software/scm/git/docs/git-shortlog.html)
    if users have inconsistant email addresses.

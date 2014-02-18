@@ -91,8 +91,7 @@ def main():
     global quiet
     parser = argparse.ArgumentParser(
         description="""
-Autotest tool - Minimalistic Continuous Integration for git:
-only informing authors of changes that have failed.
+Autotest tool - Minimalistic Continuous Integration for git
 """,
         add_help=False
     )

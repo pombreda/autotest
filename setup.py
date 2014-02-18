@@ -27,12 +27,13 @@ setup(
 
     author = "Adfinis-Sygroup AG",
     author_email = "http://adfinis-sygroup.ch/contact",
-    description = "Adfinis-Sygroup Minimalistic Continuous Integration",
+    description = "Autotest tool - Minimalistic Continuous Integration",
     license = "Modified BSD",
     long_description = """
-Autotest tool - Minimalistic Continuous Integration for git with automatic
-notification by reading the git-log and only informing authors of changes that
-have failed.
+Minimalistic Continuous Integration for git
+
+On failure it sends a notification to all users who have contributed to the
+branch since the last sucessful test.
 """,
     keywords = "adfinis-sygroup continuous integration",
     url = "https://github.com/adfinis-sygroup/autotest",
@@ -45,8 +46,8 @@ have failed.
         "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 2.6",
-        "Topic :: Software Development :: Libraries",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.3",
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Software Development :: Testing",
     ]

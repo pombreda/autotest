@@ -36,94 +36,94 @@ import sys
 import re
 import smtplib
 import traceback
+import argparse
 from email.utils import formatdate
 from email.mime.text import MIMEText
 
-# Typical initial clone:
-# ssh -R43325:git.host.com:22 user@host.dom git clone \
-# ssh://git@localhost:43325/project-dir
-
-# create the ~/.ssh/cm directory
-# Possible ssh_config
-# Host *
-# 	ForwardAgent yes
-# 	Compression yes
-# 	ControlPath ~/.ssh/cm/%r@%h:%p.conn
-# 	ServerAliveInterval 600
-
 settings = {
+    "project_path"    : "/home/path/go/project",
     "last_success"    : None,
     "last_test"       : None,
     "name"            : "project-master",
     "branch"          : "master",
     "smtp"            : "smtp.host.ch",
     "test_command"    : [
-        "ssh",
-        "user@host.dom",
         "run_tests",
     ],
-    "connect_command" : [
-        "ssh",
-        "-C",
-        "-NfM",
-        "-o",
-        "ControlPath=~/.ssh/cm/%%r@%%h:%%p.conn",
-        "user@host.dom"
-    ],
-    "disconnect_command" : [
-        "ssh",
-        "-o",
-        "ControlPath=~/.ssh/cm/%%r@%%h:%%p.conn",
-        "-O",
-        "exit",
-        "user@host.dom"
-    ],
     "authors_command"  : [
-        "ssh",
-        "-o",
-        "ControlPath=~/.ssh/cm/%%r@%%h:%%p.conn",
-        "user@host.dom",
-        "bash",
-        "-c",
-        "'cd project-dir; git shortlog -e -s %(last_success)s...HEAD'"
+        "git shortlog -e -s %(last_success)s...HEAD"
     ],
     "switch_command"  : [
-        "ssh",
-        "-o",
-        "ControlPath=~/.ssh/cm/%%r@%%h:%%p.conn",
-        "user@host.dom",
         "bash",
         "-c",
-        "'cd project-dir; git clean -df; git checkout .;"
-        "git checkout %(branch)s'"
+        "'git clean -dxf; git checkout .; git checkout %(branch)s'"
     ],
     "pull_command"    : [
-        "ssh",
-        "-o",
-        "ControlPath=~/.ssh/cm/%%r@%%h:%%p.conn",
-        "-R43325:git.host.com:22",
-        "user@host.dom",
         "bash",
         "-c",
-        "'cd project-dir; git fetch; git reset --hard origin/%(branch)s'"
+        "'git fetch; git reset --hard origin/%(branch)s'"
     ],
     "revision_command": [
-        "ssh",
-        "-o",
-        "ControlPath=~/.ssh/cm/%%r@%%h:%%p.conn",
-        "user@host.dom",
         "bash",
         "-c",
-        "'cd project-dir; git rev-parse HEAD'"
+        "git rev-parse HEAD'"
     ]
 }
 
-settings_file = "settings.json"
+settings_file = None
 
 
 def main():
+    global settings_file
+    try:
+        parser = argparse.ArgumentParser(
+            description=("""
+Autotest tool - Minialistic Continuous Integration
+
+Typical setup:
+# autotest init --settings path/to/settings.json
+# vi path/to/settings.json
+# autotest test --settings path/to/settings.json
+"""),
+        )
+        parser.add_argument(
+            "command",
+            help="command to execute",
+            choices=['init', 'test']
+        )
+        parser.add_argument(
+            "--s",
+            "--settings",
+            nargs="?",
+            help="Path to settings (json)",
+        )
+        parser.add_argument(
+            "-t",
+            "--test",
+            help="Enable test mode (raise exceptions)",
+            action="store_true"
+        )
+        args = parser.parse_args()
+        command = args.command
+        settings_file = args.settings
+
+    except Exception:
+        parser.print_help()
+        sys.exit(1)
+        if args.test:
+            raise
+    if command == "init":
+        write_settings()
+    elif command == "test":
+        execute()
+    else:
+        parser.print_help()
+        sys.exit(1)
+
+
+def execute():
     """Executes the defined commands and sends a notification on failure."""
-    init_settings()
+    read_settings()
     try:
         branch = settings["branch"]
         execute_and_print("connect_command", communicate=False)
@@ -260,17 +260,16 @@ def execute_and_print(cmd, env={}, communicate=True):
         print(stderr)
 
 
-def init_settings():
-    """Read or create settings"""
+def read_settings():
+    """Read settings"""
     global settings
     if os.path.isfile(settings_file):
         f = open(settings_file, "r")
         settings = json.load(f)
         f.close()
     else:
-        write_settings()
-        print("Please edit settings.json")
-        sys.exit(0)
+        print("Settings not found.")
+        sys.exit(1)
 
 
 def write_settings():

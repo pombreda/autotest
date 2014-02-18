@@ -1,9 +1,5 @@
 from setuptools import setup
-from setuptools import find_packages
 from setuptools.command.install import install
-import os
-import shutil
-import glob
 
 
 class CustomInstallCommand(install):
@@ -34,10 +30,12 @@ setup(
     description = "Adfinis-Sygroup Minimalistic Continuous Integration",
     license = "Modified BSD",
     long_description = """
-Adfinis-Sygroup Minimalistic Continuous Integration with automatic notification
-by reading the git-log and only informing authors of changes that failed.""",
+Autotest tool - Minimalistic Continuous Integration for git with automatic
+notification by reading the git-log and only informing authors of changes that
+have failed.
+""",
     keywords = "adfinis-sygroup continuous integration",
-    url = "http://adfinis-sygroup.ch",
+    url = "https://github.com/adfinis-sygroup/autotest",
     classifiers = [
         "Development Status :: 4 - Beta",
         "Environment :: Console",

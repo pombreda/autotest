@@ -55,7 +55,7 @@ settings = {
     "switch_command"  : [
         "bash",
         "-c",
-        "git clean -dxf; git checkout .; git checkout %(branch)s"
+        "git clean -dxf; git checkout .; git checkout origin/%(branch)s"
     ],
     "pull_command"    : [
         "bash",

@@ -284,19 +284,15 @@ def read_settings():
 
 def write_settings():
     """Write settings"""
-    if os.path.isfile(settings_file):
-        f = open(settings_file, "w")
-        json.dump(
-            settings,
-            f,
-            sort_keys=True,
-            indent=4,
-            separators=(',', ': ')
-        )
-        f.close()
-    else:
-        print("Settings not found.")
-        sys.exit(1)
+    f = open(settings_file, "w")
+    json.dump(
+        settings,
+        f,
+        sort_keys=True,
+        indent=4,
+        separators=(',', ': ')
+    )
+    f.close()
 
 
 def execute_external(command, stdin='', communicate=True):

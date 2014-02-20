@@ -2,13 +2,9 @@ from setuptools import setup
 from setuptools.command.install import install
 
 
-class CustomInstallCommand(install):
-    def run(self):
-        pass
-
 setup(
     name = "adsy-autotest",
-    version = "0.1.0",
+    version = "0.2.0",
     package_dir = {'' : 'src'},
     py_modules = ['adsy_autotest'],
     entry_points = {
@@ -20,10 +16,6 @@ setup(
     install_requires = [
         'argparse'
     ],
-
-    cmdclass = {
-        'install': CustomInstallCommand,
-    },
 
     author = "Adfinis-Sygroup AG",
     author_email = "http://adfinis-sygroup.ch/contact",
